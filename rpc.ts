@@ -40,7 +40,7 @@ async function createClient (natsOptions: NatsOptions): Promise<RPCClient> {
       const timeout = options.timeout || 1000
       const topic = createTopic(fnName)
 
-      const { data } = await nc.request(topic, timeout, args)
+      const { data } = await nc.request(topic, timeout, [].concat(args))
       return data
     }
   }
