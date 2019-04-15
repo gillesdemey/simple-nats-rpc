@@ -19,8 +19,6 @@ async function createServer (natsOptions: NatsOptions, iface: RPCInterface): Pro
   const functions = Object.entries(iface)
 
   const subscribe = ([topic, fn]) => {
-    console.log(`Registering "${topic}"`)
-
     return nc.subscribe(createTopic(topic), async (err: Error, msg: Msg) => {
       if (err) throw err
 
