@@ -1,8 +1,12 @@
 {
   "name": "simple-nats-rpc",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/rpc.js",
   "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "postInstall": "npm run build"
+  },
   "devDependencies": {
     "@types/node": "^11.13.4",
     "ts-node": "^8.0.3"
