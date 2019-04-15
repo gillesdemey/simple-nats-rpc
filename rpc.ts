@@ -22,7 +22,9 @@ async function createServer (natsOptions: NatsOptions, iface: RPCInterface): Pro
     return nc.subscribe(createTopic(topic), async (err: Error, msg: Msg) => {
       if (err) throw err
 
-      const response = await fn(...msg.data)
+      const { data: args = [] } = msg
+
+      const response = await fn(...args)
       nc.publish(msg.reply, response)
     })
   }
@@ -34,7 +36,7 @@ async function createClient (natsOptions: NatsOptions): Promise<RPCClient> {
   const nc = await connect(natsOptions)
 
   return {
-    request: async (fnName, args, options = {}) => {
+    request: async (fnName, args = [], options = {}) => {
       const timeout = options.timeout || 1000
       const topic = createTopic(fnName)
 
