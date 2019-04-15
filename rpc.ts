@@ -1,4 +1,6 @@
-import { Client } from 'ts-nats'
+import { connect, Msg, NatsConnectionOptions } from 'ts-nats'
+
+export type NatsOptions = string | number | NatsConnectionOptions
 
 export interface RPCInterface {
   [key:string]: Function
@@ -12,13 +14,14 @@ export type RequestOptions = {
   timeout?: number
 }
 
-async function createServer (nc: Client, iface: RPCInterface): Promise<void> {
+async function createServer (natsOptions: NatsOptions, iface: RPCInterface): Promise<void> {
+  const nc = await connect(natsOptions)
   const functions = Object.entries(iface)
 
   const subscribe = ([topic, fn]) => {
     console.log(`Registering "${topic}"`)
 
-    return nc.subscribe(createTopic(topic), async (err, msg) => {
+    return nc.subscribe(createTopic(topic), async (err: Error, msg: Msg) => {
       if (err) throw err
 
       const response = await fn(...msg.data)
@@ -29,7 +32,9 @@ async function createServer (nc: Client, iface: RPCInterface): Promise<void> {
   await Promise.all(functions.map(subscribe))
 }
 
-function createClient (nc: Client): RPCClient {
+async function createClient (natsOptions: NatsOptions): Promise<RPCClient> {
+  const nc = await connect(natsOptions)
+
   return {
     request: async (fnName, args, options = {}) => {
       const timeout = options.timeout || 1000

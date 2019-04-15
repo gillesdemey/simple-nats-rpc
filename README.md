@@ -14,8 +14,7 @@ const functions = {
   subtract: (a, b) => b - a
 }
 
-const nc = await connect({ payload: Payload.JSON })
-createServer(nc, functions)
+createServer({ payload: Payload.JSON }, functions)
 ```
 
 **client.ts**
@@ -23,8 +22,7 @@ createServer(nc, functions)
 ```typescript
 import { createClient } from 'simple-nats-rpc'
 
-const nc = await connect({ payload: Payload.JSON })
-const client = createClient(nc)
+const client = await createClient({ payload: Payload.JSON })
 
 const result = await client.request('add', [1, 2], { timeout: 1000 })
 // => 3
