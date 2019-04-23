@@ -1,12 +1,14 @@
-import { connect, Payload } from 'ts-nats'
+import { Payload } from 'ts-nats'
 import { createServer } from '../rpc'
 
 const functions = {
   add: (a, b) => a + b,
-  subtract: (a, b) => b - a
+  subtract: (a, b) => b - a,
+  oops: async () => {
+    throw 'oops'
+  }
 }
 
-connect({ payload: Payload.JSON })
-  .then(nc => createServer(nc, functions))
+createServer({ payload: Payload.JSON }, functions)
   .then(() => console.log('Listening...'))
   .catch(console.error)

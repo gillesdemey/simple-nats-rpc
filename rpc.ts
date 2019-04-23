@@ -1,4 +1,5 @@
 import { connect, Msg, NatsConnectionOptions } from 'ts-nats'
+import { RPCError } from './error'
 
 export type NatsOptions = string | number | NatsConnectionOptions
 
@@ -8,6 +9,7 @@ export interface RPCInterface {
 
 export interface RPCClient {
   request: (fnName: string, args: any[], options?: RequestOptions) => Promise<any>
+  close: () => Promise<any>
 }
 
 export type RequestOptions = {
@@ -19,13 +21,21 @@ async function createServer (natsOptions: NatsOptions, iface: RPCInterface): Pro
   const functions = Object.entries(iface)
 
   const subscribe = ([topic, fn]) => {
-    return nc.subscribe(createTopic(topic), async (err: Error, msg: Msg) => {
-      if (err) throw err
+    nc.subscribe(createTopic(topic), async (err: Error, msg: Msg) => {
+      if (err) {
+        nc.publish(msg.reply, err)
+        return
+      }
 
       const { data: args = [] } = msg
 
-      const response = await fn(...args)
-      nc.publish(msg.reply, response)
+      try {
+        const response = await fn(...args)
+        debugger
+        nc.publish(msg.reply, response)
+      } catch (err) {
+        nc.publish(msg.reply, new RPCError(err))
+      }
     })
   }
 
@@ -42,7 +52,8 @@ async function createClient (natsOptions: NatsOptions): Promise<RPCClient> {
 
       const { data } = await nc.request(topic, timeout, [].concat(args))
       return data
-    }
+    },
+    close: () => nc.drain()
   }
 }
 
