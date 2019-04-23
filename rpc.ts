@@ -31,7 +31,6 @@ async function createServer (natsOptions: NatsOptions, iface: RPCInterface): Pro
 
       try {
         const response = await fn(...args)
-        debugger
         nc.publish(msg.reply, response)
       } catch (err) {
         nc.publish(msg.reply, new RPCError(err))
