@@ -12,6 +12,17 @@ export interface RPCClient {
   close: () => Promise<any>
 }
 
+enum RPCStatus {
+  Failed = 'FAILED',
+  Success = 'SUCCESS'
+}
+
+export interface RPCResponse {
+  status: RPCStatus
+  error?: object
+  result?: any
+}
+
 export type RequestOptions = {
   timeout?: number
 }
@@ -23,7 +34,7 @@ async function createServer (natsOptions: NatsOptions, iface: RPCInterface): Pro
   const subscribe = ([topic, fn]) => {
     nc.subscribe(createTopic(topic), async (err: Error, msg: Msg) => {
       if (err) {
-        nc.publish(msg.reply, err)
+        nc.publish(msg.reply, createRPCResponse(err))
         return
       }
 
@@ -31,9 +42,9 @@ async function createServer (natsOptions: NatsOptions, iface: RPCInterface): Pro
 
       try {
         const response = await fn(...args)
-        nc.publish(msg.reply, response)
+        nc.publish(msg.reply, createRPCResponse(null, response))
       } catch (err) {
-        nc.publish(msg.reply, new RPCError(err))
+        nc.publish(msg.reply, createRPCResponse(new RPCError(err)))
       }
     })
   }
@@ -59,6 +70,14 @@ async function createClient (natsOptions: NatsOptions): Promise<RPCClient> {
 function createTopic (topic: string): string {
   const prefix = `rpc:commands:`
   return `${prefix}${topic}`
+}
+
+function createRPCResponse (error?: Error | null, response?: any): RPCResponse {
+  return {
+    status: error ? RPCStatus.Failed : RPCStatus.Success,
+    error: error || undefined,
+    response: response || undefined
+  } as RPCResponse
 }
 
 export {
